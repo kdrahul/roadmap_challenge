@@ -19,76 +19,151 @@ package main
 // - Ensure to handle errors and edge cases gracefully.
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
-	"encoding/json"
+	"slices"
+	"strings"
+	"strconv"
 )
 
-type State string
 
 const (
-	Done       State = "DONE"
-	InProgress State = "IN-PROGRESS"
-	Todo       State = "TODO"
+	Done       = "DONE"
+	InProgress = "IN-PROGRESS"
+	Todo       = "TODO"
 )
 
 // Colors
 const (
 	Reset = "\033[0m"
-	Red = "\033[31m"
+	Red   = "\033[31m"
 )
 
 type Task struct {
-	id int `json:"ID"`
-	title string `json:"Title"`
-	state State `json:"State"`
+	Id    int    `json:"ID"`
+	Title string `json:"Title"`
+	State string  `json:"State"`
 }
 
+func getAllTasks() []Task {
+	data, err := os.ReadFile(FILENAME)
+	if err != nil {
+		return nil
+	}
+	if string(data) == "" {
+		fmt.Println(Red + "No data" + Reset)
+		return nil
+	}
 
-func getAllTasks() []Task{
-			var data []byte
-			f.Read(data)
-			if string(data) == "" {
-				fmt.Println(Red + "No data" + Reset)
-				return
-			}
+	var tasks []Task
+	err = json.Unmarshal(data, &tasks)
+	if err != nil {
+		fmt.Errorf("Error unmarshalling data from file: %v", err)
+		return nil
+	}
+	fmt.Println(tasks)
+	return tasks
+}
 
-			var tasks []Task
-			err := json.Unmarshal(data, &tasks)
-			if err != nil {
-				fmt.Errorf("Error unmarshalling data from file: %v", err)
-				return
+func getMaxId(tasks []Task) int {
+
+	if len(tasks) != 0 {
+		max := slices.MaxFunc(tasks, func(a, b Task) int {
+			if a.Id > b.Id {
+				return 1
+			} else if a.Id < b.Id {
+				return -1
 			}
-			fmt.Println(tasks)
-			return tasks
+			return 0
+		})
+		// fmt.Printf("Max Item: %v; ID: %v\n", max, max.Id)
+		return max.Id
+	}
+	return 0
 }
 
 func addTask(t string) {
 	tasks := getAllTasks()
 	newTask := Task{
-		title: t,
-		state: "todo"
+		Id:    getMaxId(tasks) + 1,
+		Title: t,
+		State: Todo,
 	}
-	append(tasks, newTask)
+	tasks = append(tasks, newTask)
+	taskJson, err := json.Marshal(tasks)
+	fmt.Printf("%v\n", tasks)
+	if err != nil {
+		fmt.Println("Error marshalling data: %v", err)
+		return
+	}
+	err = os.WriteFile(FILENAME, taskJson, 0644)
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
-var f *os.File
-
-func init() {
-	filename := "store.json"
-	file,err := os.Open(filename)
+func getAllState(state string) {
+	data, err := os.ReadFile(FILENAME)
 	if err != nil {
-		fmt.Errorf("Error opening a file: %v\n", err)
-		f, err = os.Create(filename)
-		if err != nil {
-			fmt.Errorf("Error in creating a file: %v\n", err)
+		return
+	}
+	if string(data) == "" {
+		fmt.Println(Red + "No data" + Reset)
+		return
+	}
+
+	var tasks []Task
+	err = json.Unmarshal(data, &tasks)
+	if err != nil {
+		fmt.Errorf("Error unmarshalling data from file: %v", err)
+		return
+	}
+	var doneTasks []Task
+	for _, task := range tasks {
+		if strings.EqualFold(task.State, state){
+			doneTasks = append(doneTasks, task)
 		}
 	}
-	f = file
+	fmt.Println(doneTasks)
 }
 
-func main() {
+func markDone(id int) {
+	data, err := os.ReadFile(FILENAME)
+	if err != nil {
+		return
+	}
+	var tasks []*Task
+	err = json.Unmarshal(data, &tasks)
+	if err != nil {
+		fmt.Errorf("Error unmarshalling data from file: %v", err)
+		return
+	}
 
+	for _, task := range tasks {
+		if task.Id == id {
+			task.State = Done
+		}
+	}
+
+	taskJson, err := json.Marshal(tasks)
+	if err != nil {
+		fmt.Println("Error marshalling data: %v", err)
+		return
+	}
+	err = os.WriteFile(FILENAME, taskJson, 0644)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Println("Marked DONE")
+
+
+}
+
+const FILENAME = "store.json"
+
+func main() {
 
 	argsLength := len(os.Args)
 
@@ -96,25 +171,25 @@ func main() {
 	case 2:
 		switch os.Args[1] {
 		case "list":
-			getAllTasks(file)
+			getAllTasks()
 		default:
 			fmt.Println("You're using it wrong")
 		}
 	case 3:
 		switch os.Args[1] {
 		case "list":
-			switch os.Args[2] {
-			case "done":
-			case "todo":
-			case "in-progress":
-			default:
-				// TODO: Show help
-			}
+			getAllState(os.Args[2]) // List tasks by status
 		case "add":
-				addTask(os.Args[2])
+			addTask(os.Args[2])
 		case "delete":
 		case "mark-done":
-			fmt.Println("Marking Done")
+
+			i, err := strconv.Atoi(os.Args[2])
+			if err != nil {
+				fmt.Printf("Bad input, gimme a number: %v\n", err)
+				return
+			}
+			markDone(i)
 		case "mark-in-progress":
 			fmt.Println("Good start")
 		default:
