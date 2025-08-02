@@ -23,16 +23,34 @@ import (
 	"fmt"
 	"os"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
-	"strconv"
 )
-
 
 const (
 	Done       = "DONE"
 	InProgress = "IN-PROGRESS"
 	Todo       = "TODO"
+	HELP       = `# Adding a new task
+task_tracker add "Buy groceries"
+# Output: Task added successfully (ID: 1)
+
+# Updating and deleting tasks
+task_tracker update 1 "Buy groceries and cook dinner"
+task_tracker delete 1
+
+# Marking a task as in progress or done
+task_tracker mark-in-progress 1
+task_tracker mark-done 1
+
+# Listing all tasks
+task_tracker list
+
+# Listing tasks by status
+task_tracker list done
+task_tracker list todo
+task_tracker list in-progress`
 )
 
 // Colors
@@ -42,12 +60,11 @@ const (
 )
 
 type Task struct {
-	Id    int    `json:"ID"`
-	Title string `json:"Title"`
-	State string  `json:"State"`
+	Id        int       `json:"ID"`
+	Title     string    `json:"Title"`
+	State     string    `json:"State"`
 	CreatedOn time.Time `json: "createdOn"`
 	UpdatedOn time.Time `json: "updatedOn"`
-
 }
 
 func getAllTasks() {
@@ -55,7 +72,7 @@ func getAllTasks() {
 	if err != nil {
 		return
 	}
-	if len(tasks) <= 0{
+	if len(tasks) <= 0 {
 		fmt.Println(Red + "No data" + Reset)
 		return
 	}
@@ -89,12 +106,13 @@ func addTask(t string) {
 		return
 	}
 	newTask := Task{
-		Id:    getMaxId(tasks) + 1,
-		Title: t,
-		State: Todo,
+		Id:        getMaxId(tasks) + 1,
+		Title:     t,
+		State:     Todo,
 		CreatedOn: time.Now(),
 		UpdatedOn: time.Now(),
 	}
+	fmt.Printf("Task added successfully: %d", newTask.Id)
 	tasks = append(tasks, &newTask)
 	writeToFile(tasks)
 }
@@ -117,7 +135,7 @@ func getAllState(state string) {
 	}
 	var doneTasks []Task
 	for _, task := range tasks {
-		if strings.EqualFold(task.State, state){
+		if strings.EqualFold(task.State, state) {
 			doneTasks = append(doneTasks, task)
 		}
 	}
@@ -152,7 +170,7 @@ func writeToFile(tasks []*Task) {
 
 func markInProgress(id int) {
 
-	tasks,err := getDataFromFile()
+	tasks, err := getDataFromFile()
 	if err != nil {
 		fmt.Println("Couldn't get data:", err)
 		return
@@ -170,7 +188,7 @@ func markInProgress(id int) {
 }
 func markDone(id int) {
 
-	tasks,err := getDataFromFile()
+	tasks, err := getDataFromFile()
 	if err != nil {
 		fmt.Println("Couldn't get data:", err)
 		return
@@ -204,7 +222,6 @@ func deleteItem(i int) {
 
 	tasks = append(tasks[:index], tasks[index+1:]...)
 
-
 	writeToFile(tasks)
 
 }
@@ -227,6 +244,7 @@ func updateItem(i int, taskName string) {
 	tasks[index].Title = taskName
 	tasks[index].UpdatedOn = time.Now()
 
+	fmt.Printf("Task updated successfully: %d", tasks[index].Id)
 	writeToFile(tasks)
 }
 
