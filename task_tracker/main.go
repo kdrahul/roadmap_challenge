@@ -24,6 +24,7 @@ import (
 	"os"
 	"slices"
 	"strings"
+	"time"
 	"strconv"
 )
 
@@ -44,6 +45,9 @@ type Task struct {
 	Id    int    `json:"ID"`
 	Title string `json:"Title"`
 	State string  `json:"State"`
+	CreatedOn time.Time `json: "createdOn"`
+	UpdatedOn time.Time `json: "updatedOn"`
+
 }
 
 func getAllTasks() {
@@ -57,7 +61,7 @@ func getAllTasks() {
 	}
 
 	for _, task := range tasks {
-		fmt.Printf("----------------------------------------\nID:\t%d\nTITLE:\t%s\nSTATUS:\t%s\n", task.Id, task.Title, task.State)
+		fmt.Printf("----------------------------------------\nID:\t%d\nTITLE:\t%s\nSTATUS:\t%s\nUPDATED ON:%v\n", task.Id, task.Title, task.State, task.UpdatedOn)
 	}
 }
 
@@ -88,6 +92,8 @@ func addTask(t string) {
 		Id:    getMaxId(tasks) + 1,
 		Title: t,
 		State: Todo,
+		CreatedOn: time.Now(),
+		UpdatedOn: time.Now(),
 	}
 	tasks = append(tasks, &newTask)
 	writeToFile(tasks)
@@ -155,6 +161,7 @@ func markInProgress(id int) {
 	for _, task := range tasks {
 		if task.Id == id {
 			task.State = InProgress
+			task.UpdatedOn = time.Now()
 		}
 	}
 
@@ -172,6 +179,7 @@ func markDone(id int) {
 	for _, task := range tasks {
 		if task.Id == id {
 			task.State = Done
+			task.UpdatedOn = time.Now()
 		}
 	}
 
@@ -217,6 +225,7 @@ func updateItem(i int, taskName string) {
 	}
 
 	tasks[index].Title = taskName
+	tasks[index].UpdatedOn = time.Now()
 
 	writeToFile(tasks)
 }
