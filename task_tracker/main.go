@@ -33,24 +33,24 @@ const (
 	InProgress = "IN-PROGRESS"
 	Todo       = "TODO"
 	HELP       = `# Adding a new task
-task_tracker add "Buy groceries"
+	task_tracker add "Buy groceries"
 # Output: Task added successfully (ID: 1)
 
 # Updating and deleting tasks
-task_tracker update 1 "Buy groceries and cook dinner"
-task_tracker delete 1
+	task_tracker update 1 "Buy groceries and cook dinner"
+	task_tracker delete 1
 
 # Marking a task as in progress or done
-task_tracker mark-in-progress 1
-task_tracker mark-done 1
+	task_tracker mark-in-progress 1
+	task_tracker mark-done 1
 
 # Listing all tasks
-task_tracker list
+	task_tracker list
 
 # Listing tasks by status
-task_tracker list done
-task_tracker list todo
-task_tracker list in-progress`
+	task_tracker list done
+	task_tracker list todo
+	task_tracker list in-progress`
 )
 
 // Colors
@@ -260,7 +260,7 @@ func main() {
 		case "list":
 			getAllTasks()
 		default:
-			fmt.Println("You're using it wrong")
+			fmt.Println(HELP)
 		}
 	case 3:
 		switch os.Args[1] {
@@ -291,7 +291,7 @@ func main() {
 			}
 			markInProgress(i)
 		default:
-			// TODO: Show help
+			fmt.Println(HELP)
 		}
 	case 4:
 		switch os.Args[1] {
@@ -306,8 +306,7 @@ func main() {
 		}
 
 	default:
-		fmt.Println("Here's how to use it")
-
+		fmt.Println(HELP)
 	}
 
 }
