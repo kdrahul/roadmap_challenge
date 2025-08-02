@@ -46,30 +46,25 @@ type Task struct {
 	State string  `json:"State"`
 }
 
-func getAllTasks() []Task {
-	data, err := os.ReadFile(FILENAME)
+func getAllTasks() {
+	tasks, err := getDataFromFile()
 	if err != nil {
-		return nil
+		return
 	}
-	if string(data) == "" {
+	if len(tasks) <= 0{
 		fmt.Println(Red + "No data" + Reset)
-		return nil
+		return
 	}
 
-	var tasks []Task
-	err = json.Unmarshal(data, &tasks)
-	if err != nil {
-		fmt.Errorf("Error unmarshalling data from file: %v", err)
-		return nil
+	for _, task := range tasks {
+		fmt.Printf("----------------------------------------\nID:\t%d\nTITLE:\t%s\nSTATUS:\t%s\n", task.Id, task.Title, task.State)
 	}
-	fmt.Println(tasks)
-	return tasks
 }
 
-func getMaxId(tasks []Task) int {
+func getMaxId(tasks []*Task) int {
 
 	if len(tasks) != 0 {
-		max := slices.MaxFunc(tasks, func(a, b Task) int {
+		max := slices.MaxFunc(tasks, func(a, b *Task) int {
 			if a.Id > b.Id {
 				return 1
 			} else if a.Id < b.Id {
@@ -84,23 +79,18 @@ func getMaxId(tasks []Task) int {
 }
 
 func addTask(t string) {
-	tasks := getAllTasks()
+	tasks, err := getDataFromFile()
+	if err != nil {
+		fmt.Println("Couldn't get data:", err)
+		return
+	}
 	newTask := Task{
 		Id:    getMaxId(tasks) + 1,
 		Title: t,
 		State: Todo,
 	}
-	tasks = append(tasks, newTask)
-	taskJson, err := json.Marshal(tasks)
-	fmt.Printf("%v\n", tasks)
-	if err != nil {
-		fmt.Println("Error marshalling data: %v", err)
-		return
-	}
-	err = os.WriteFile(FILENAME, taskJson, 0644)
-	if err != nil {
-		fmt.Println(err)
-	}
+	tasks = append(tasks, &newTask)
+	writeToFile(tasks)
 }
 
 func getAllState(state string) {
@@ -211,6 +201,26 @@ func deleteItem(i int) {
 
 }
 
+func updateItem(i int, taskName string) {
+	tasks, err := getDataFromFile()
+	if err != nil {
+		fmt.Println("Couldn't get data:", err)
+		return
+	}
+
+	var index int
+	for idx, task := range tasks {
+		if task.Id == i {
+			index = idx
+			break
+		}
+	}
+
+	tasks[index].Title = taskName
+
+	writeToFile(tasks)
+}
+
 const FILENAME = "store.json"
 
 func main() {
@@ -259,7 +269,13 @@ func main() {
 	case 4:
 		switch os.Args[1] {
 		case "update":
-			fmt.Printf("Updating: %v -> %s", os.Args[2], os.Args[3])
+			i, err := strconv.Atoi(os.Args[2])
+			if err != nil {
+				fmt.Printf("Bad input, gimme a number: %v\n", err)
+				return
+			}
+			updateItem(i, os.Args[3])
+
 		}
 
 	default:
