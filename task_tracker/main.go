@@ -128,24 +128,21 @@ func getAllState(state string) {
 	fmt.Println(doneTasks)
 }
 
-func markDone(id int) {
+func getDataFromFile() ([]*Task, error) {
 	data, err := os.ReadFile(FILENAME)
 	if err != nil {
-		return
+		return nil, err
 	}
 	var tasks []*Task
 	err = json.Unmarshal(data, &tasks)
 	if err != nil {
 		fmt.Errorf("Error unmarshalling data from file: %v", err)
-		return
+		return nil, err
 	}
+	return tasks, nil
+}
 
-	for _, task := range tasks {
-		if task.Id == id {
-			task.State = Done
-		}
-	}
-
+func writeToFile(tasks []*Task) {
 	taskJson, err := json.Marshal(tasks)
 	if err != nil {
 		fmt.Println("Error marshalling data: %v", err)
@@ -155,9 +152,62 @@ func markDone(id int) {
 	if err != nil {
 		fmt.Println(err)
 	}
+}
 
-	fmt.Println("Marked DONE")
+func markInProgress(id int) {
 
+	tasks,err := getDataFromFile()
+	if err != nil {
+		fmt.Println("Couldn't get data:", err)
+		return
+	}
+
+	for _, task := range tasks {
+		if task.Id == id {
+			task.State = InProgress
+		}
+	}
+
+	writeToFile(tasks)
+
+}
+func markDone(id int) {
+
+	tasks,err := getDataFromFile()
+	if err != nil {
+		fmt.Println("Couldn't get data:", err)
+		return
+	}
+
+	for _, task := range tasks {
+		if task.Id == id {
+			task.State = Done
+		}
+	}
+
+	writeToFile(tasks)
+
+}
+
+func deleteItem(i int) {
+	tasks, err := getDataFromFile()
+	if err != nil {
+		fmt.Println("Couldn't get data:", err)
+		return
+	}
+
+	var index int
+	for idx, task := range tasks {
+		if task.Id == i {
+			index = idx
+			break
+		}
+	}
+
+	tasks = append(tasks[:index], tasks[index+1:]...)
+
+
+	writeToFile(tasks)
 
 }
 
@@ -182,6 +232,12 @@ func main() {
 		case "add":
 			addTask(os.Args[2])
 		case "delete":
+			i, err := strconv.Atoi(os.Args[2])
+			if err != nil {
+				fmt.Printf("Bad input, gimme a number: %v\n", err)
+				return
+			}
+			deleteItem(i)
 		case "mark-done":
 
 			i, err := strconv.Atoi(os.Args[2])
@@ -191,7 +247,12 @@ func main() {
 			}
 			markDone(i)
 		case "mark-in-progress":
-			fmt.Println("Good start")
+			i, err := strconv.Atoi(os.Args[2])
+			if err != nil {
+				fmt.Printf("Bad input, gimme a number: %v\n", err)
+				return
+			}
+			markInProgress(i)
 		default:
 			// TODO: Show help
 		}
