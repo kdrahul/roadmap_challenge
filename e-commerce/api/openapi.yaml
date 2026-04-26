@@ -1,0 +1,204 @@
+openapi: 3.0.0
+info:
+  title: E-Commerce API
+  description: API used for E-Commerce website
+  version: 1.0.0
+
+servers:
+  - url: 0.0.0.0:9123
+
+paths:
+  # /cart:
+  #   get:
+  #     summary: Show cart
+  #     tags: [Cart]
+  #     description: Show items in cart
+  #     responses:
+  #       '200':
+  #         description: Show all items present in cart
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/'
+  #
+  # /cart/{id}:
+  #   delete:
+  #     summary: Delete from cart
+  #     tags: [Cart]
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         description: Product ID
+  #         schema:
+  #           type: string
+  #     responses:
+  #       '200':
+  #         description: Show all items present in cart
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/'
+  #   put:
+  #     summary: Update cart (Add to cart)
+  #     tags: [Cart]
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         description: Product ID
+  #         schema:
+  #           type: string
+  #     responses:
+  #       '200':
+  #         description: Show all items present in cart
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/'
+  /auth/signup:
+    post:
+      summary: Register a new user
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid input
+  /auth/login:
+    post:
+      summary: Login user
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+  /auth/me:
+    get:
+      summary: Get current authenticated user
+      tags: [Authentication]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Authenticated user data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerError'
+
+  /auth/logout:
+    post:
+      summary: Logout current user
+      tags: [Authentication]
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Logged out successfully
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    InternalServerError:
+      type: object
+      required:
+        - message
+        - statusCode
+        - error
+      properties:
+        message:
+          type: string
+          example: Internal server error
+        error:
+          type: string
+    UserDetails:  
+      type: object
+      required:
+        - name
+        - internalID
+      properties:
+        name:
+          type: string
+        age:
+          type: string
+        internalID:
+          type: string
+    SignupRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 8
+        name:
+          type: string
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT access token
+        user:
+          $ref: '#/components/schemas/User'
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        email:
+          type: string
